@@ -6,7 +6,7 @@ One catch tho, I was only allowed to use [GDB](https://ctf101.org/reverse-engine
 
 After running through the program a couple of times, I quickly realised the `strcmp` function being used was not actually the library function (I'll get to this part in a bit)
 Stepping into the function lets us take a closer look at what it might be doing. Reading the disassembly, we can observe the following: <br>
-![screenshot](./screenshot)
+![screenshot](./screenshot)<br>
 
 This is repeated 15 times. Essentially, its a byte by byte `rol` operation on our input. 
 <br><br>
@@ -18,7 +18,7 @@ So basically, our input is being rotated to the left (byte by byte) once. Pretty
 Now here came the confusing part.
 These were the args passed to the `strcmp` function:
 <br>
-![Screenshot](./screenshot_args)
+![Screenshot](./screenshot_args) <br>
 So naturally, I assumed our input must be getting jumbled and turning into the 2nd argument and that was in fact the flag. Ah, not so much.
 
 Initially, our argument was stored in `r8`, then moved byte by byte into `rdi` after being rotated to the left by 3. 
@@ -34,7 +34,7 @@ Now, we can see another function call inside the `strcmp` function: <br>
 
 
 Important detail to be observed here: <br>
-![alt](./screenshot_imp)
+![alt](./screenshot_imp)<br>
 `al` contains *our input*, it stores it byte by byte.<br> 
 `cl` contains the *2nd arg* passed to the `strcmp` function.
 
@@ -43,7 +43,7 @@ This was something I failed to catch in my first time analysing this function, c
 <br>
 
 Now, coming to the encryption bit:<br>
-![alt](./screenshot_second)
+![alt](./screenshot_second)<br>
 
 Each byte of the 2nd arg is being `XOR`ed with `0xc` and then has 6 added to it.
 *This* is the string that's being compared to our rotated input.
@@ -53,11 +53,11 @@ So, if we can get our hands on the input string that's passed onto the `strncmp`
 
 How do we get that input argument though?
 <br>
-Well, if we hop back to where `strncmp` is called, we can see the 2 args being passed into it. 
-![alt](./screenshot_final)
+Well, if we hop back to where `strncmp` is called, we can see the 2 args being passed into it. <br>
+![alt](./screenshot_final)<br>
 
 We can see the 2nd string is stored at offset `0x7fffffffe039`, so with a little GDB magic, we can print the 15 bytes stored there. <br>
-![alt](./screenshot_offset)
+![alt](./screenshot_offset)<br>
 
 Now, all we have to do is put these in an array, perform the required operations and we should get the flag. 
 
@@ -75,7 +75,7 @@ Output:
 > aW5jdGZrNGl6M24
 
 Let's input this to the program and check <br>
-![alt](./screenshot_flag)
+![alt](./screenshot_flag)<br>
 
 *nicE*
 <br><br><hr>
