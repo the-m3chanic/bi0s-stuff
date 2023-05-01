@@ -5,7 +5,7 @@ Find the flag, pretty simple right?
 One catch tho, I was only allowed to use [GDB](https://ctf101.org/reverse-engineering/what-is-gdb/) to solve this challenge. 
 
 After running through the program a couple of times, I quickly realised the `strcmp` function being used was not actually the library function (I'll get to this part in a bit)
-Stepping into the function lets us take a closer look at what it might be doing. Reading the disassembly, we can observe the following:
+Stepping into the function lets us take a closer look at what it might be doing. Reading the disassembly, we can observe the following: <br>
 ![screenshot](./screenshot)
 
 This is repeated 15 times. Essentially, its a byte by byte `rol` operation on our input. 
@@ -16,7 +16,7 @@ Next, a similar operation is performed:
 So basically, our input is being rotated to the left (byte by byte) once. Pretty simple. 
 
 Now here came the confusing part.
-These were the args passed to the `strcmp` function:
+These were the args passed to the `strcmp` function:<br>
 ![Screenshot](./screenshot_args)
 So naturally, I assumed our input must be getting jumbled and turning into the 2nd argument and that was in fact the flag. Ah, not so much.
 
@@ -25,13 +25,14 @@ Then, keeping it in `rdi`, our input is rotated to the right by 2.
 
 However, what I failed to notice at first glance was that the further encryption was performed on the *2nd* argument (the one already in the program), and not my input. That was stored in `rsi`.
 <br><br>
-Now, we can see another function call inside the `strcmp` function:
+Now, we can see another function call inside the `strcmp` function: <br>
+
 ![screenshot](./screenshot_sec)
 <br>
 <br>
 
 
-Important detail to be observed here:
+Important detail to be observed here: <br>
 ![alt](./screenshot_imp)
 `al` contains *our input*, it stores it byte by byte.<br> 
 `cl` contains the *2nd arg* passed to the `strcmp` function.
@@ -40,7 +41,7 @@ This is an important distinction because operations are only being performed on 
 This was something I failed to catch in my first time analysing this function, cost me some time. 
 <br>
 
-Now, coming to the encryption bit:
+Now, coming to the encryption bit:<br>
 ![alt](./screenshot_second)
 
 Each byte of the 2nd arg is being `XOR`ed with `0xc` and then has 6 added to it.
@@ -54,7 +55,7 @@ How do we get that input argument though?
 Well, if we hop back to where `strncmp` is called, we can see the 2 args being passed into it. 
 ![alt](./screenshot_final)
 
-We can see the 2nd string is stored at offset `0x7fffffffe039`, so with a little GDB magic, we can print the 15 bytes stored there. 
+We can see the 2nd string is stored at offset `0x7fffffffe039`, so with a little GDB magic, we can print the 15 bytes stored there. <br>
 ![alt](./screenshot_offset)
 
 Now, all we have to do is put these in an array, perform the required operations and we should get the flag. 
@@ -72,7 +73,7 @@ print(''.join(chr(i) for i in flag))
 Output:
 > aW5jdGZrNGl6M24
 
-Let's input this to the program and check
+Let's input this to the program and check <br>
 ![alt](./screenshot_flag)
 
 *nicE*
