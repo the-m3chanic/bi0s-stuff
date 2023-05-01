@@ -10,13 +10,14 @@ Stepping into the function lets us take a closer look at what it might be doing.
 
 This is repeated 15 times. Essentially, its a byte by byte `rol` operation on our input. 
 <br><br>
-Next, a similar operation is performed:
+Next, a similar operation is performed: <br>
 ![Screenshot](./screenshot_ror)
 
 So basically, our input is being rotated to the left (byte by byte) once. Pretty simple. 
 
 Now here came the confusing part.
-These were the args passed to the `strcmp` function:<br>
+These were the args passed to the `strcmp` function:
+<br>
 ![Screenshot](./screenshot_args)
 So naturally, I assumed our input must be getting jumbled and turning into the 2nd argument and that was in fact the flag. Ah, not so much.
 
