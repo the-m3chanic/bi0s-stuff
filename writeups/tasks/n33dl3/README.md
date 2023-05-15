@@ -59,9 +59,8 @@ for i in func_addresses:
     jz = int(i, 16) + 0x23
     actual = idaapi.get_bytes(jz, 4)
     actual = actual[0]
-    
     if actual == 117 and flag == 1:
-        idaapi.patch_byte(ea, 0x74)
+        idaapi.patch_byte(jz, 0x74)
 
 
 for i in func_addresses:
