@@ -91,21 +91,26 @@ gdb.execute("r", to_string=True)
 
 gdb.execute("c", to_string=True) # will get us past main 
 
-for i in range(1010):
-	disassembly = gdb.execute("disassemble", to_string=True)
-	disassembly = disassembly.split()
-	func_name = (disassembly[6])
-	print (func_name)
-	func_name = func_name[:-1]
-	gdb.execute("set $rip = {}+37".format(func_name), to_string=True)
-	gdb.execute("ni", to_string=True)
-	char = gdb.execute("x/bx $rbp - 3", to_string=True)
-	flag_char.append(char[16:])
-	gdb.execute("c", to_string=True)
 
+for i in range(1010):
+	try:
+		disassembly = gdb.execute("disassemble", to_string=True)
+		disassembly = disassembly.split()
+		func_name = (disassembly[6])
+		func_name = func_name[:-1]
+		gdb.execute("set $rip = {}+37".format(func_name), to_string=True)
+		gdb.execute("ni", to_string=True)
+		char = gdb.execute("x/bx $rbp - 3", to_string=True)
+		flag_char.append(char[16:])
+		gdb.execute("c", to_string=True)
+	except gdb.error:
+		break
 print("FLAG IS HERE: \n")
-print (''.join([chr(i) for i in flag_char]))
-print('\n')
+
+try:
+	print (''.join([(i) for i in flag_char]))
+except TypeError:
+	print('')
 ```
 <br>
 
