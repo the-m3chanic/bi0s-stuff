@@ -110,7 +110,8 @@ print('\n')
 <br>
 
 ### `wsc{Th3_pr0m1s3_Of_4_Kn1sh!!}`
-<br>
+<br><br>
+What this script does is essentially skips over to the part where the character is being output and stores that in a list, in the end I print out the list. Cheeky I guess 🙃 <br><br><br>
 These are the 2 sensible ways I can think of to solve this challenge. Overall it was a decent challenge. Finding out *how* to write a script in IDA was the hardest part, after that I was able to manipulate stuff pretty easily. 
 
 <br><br>
