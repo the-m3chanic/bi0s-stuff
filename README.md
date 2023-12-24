@@ -1,2 +1,2 @@
-# bi0s-stuff
-Includes code and writeups (sometimes) of my tasks, and maybe CTF challenges I find interesting.
+# bi0s-stuff 
+Includes writeups of challenges I find interesting, & anything else I find interesting :)
